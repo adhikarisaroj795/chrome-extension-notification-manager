@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Professional Notification Manager",
+  "version": "1.0",
+  "description": "Advanced notification management across all tabs.",
+  "permissions": ["notifications", "tabs", "storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "View Notifications"
+  },
+  "icons": {
+    "16": "icons/16.png",
+    "48": "icons/16.png",
+    "128": "icons/16.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

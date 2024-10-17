@@ -1,7 +1,5 @@
-// Log that the service worker is loaded
 console.log("Professional Notification Manager Extension Loaded");
 
-// Constants
 const MAX_NOTIFICATIONS = 500;
 const IGNORED_SOURCES = ["example.com", "ads.com", "tracking.com"];
 
@@ -32,24 +30,14 @@ function getUniqueNotificationId() {
   return Math.random().toString(36).substr(2, 9);
 }
 
-// Notification tracking
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "trackNotification") {
-    chrome.notifications.get(request.notificationId, (notification) => {
-      if (notification && typeof notification === "object") {
-        try {
-          handleNewNotification(notification);
-        } catch (error) {
-          console.error(
-            `Error handling notification ${request.notificationId}:`,
-            error
-          );
-        }
-      } else {
-        console.log(
-          `No valid notification found for ID: ${request.notificationId}`
-        );
-      }
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const activeTab = tabs[0];
+      chrome.tabs.sendMessage(activeTab.id, {
+        action: "trackNotification",
+        notificationId: request.notificationId,
+      });
     });
     sendResponse({ success: true });
   }
@@ -77,7 +65,6 @@ function handleNewNotification(notification) {
 
     storeNotification(newNotification);
 
-    // Send message to popup
     chrome.runtime.sendMessage(
       {
         action: "newNotification",
@@ -92,6 +79,14 @@ function handleNewNotification(notification) {
         }
       }
     );
+
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const activeTab = tabs[0];
+      chrome.tabs.sendMessage(activeTab.id, {
+        action: "createNotification",
+        notification: newNotification,
+      });
+    });
   } else {
     console.log(
       `Ignoring notification: ${notification.title}. Source: ${notification.source.url}`
@@ -99,7 +94,6 @@ function handleNewNotification(notification) {
   }
 }
 
-// Notification click handling
 chrome.notifications.onClicked.addListener((notificationId) => {
   try {
     console.log(`Notification clicked: ${notificationId}`);
@@ -132,13 +126,12 @@ function handleNotificationClick(notification) {
   });
 }
 
-// Message listeners
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "getNotifications") {
     chrome.storage.local.get({ notifications: [] }, (result) => {
       sendResponse(result.notifications);
     });
-    return true; // Indicates asynchronous response
+    return true;
   }
 
   if (request.action === "clearNotifications") {
@@ -165,14 +158,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return false;
 });
 
-// Periodic cleanup
 setInterval(() => {
   chrome.storage.local.get({ notifications: [] }, (result) => {
     const notifications = result.notifications || [];
     const oldestTimestamp = Math.min(
       ...notifications.map((n) => new Date(n.timestamp).getTime())
     );
-    const cutoffDate = new Date(oldestTimestamp + 24 * 60 * 60 * 1000); // Keep only last 24 hours
+    const cutoffDate = new Date(oldestTimestamp + 24 * 60 * 60 * 1000);
 
     const oldNotifications = notifications.filter(
       (n) => new Date(n.timestamp) < cutoffDate
@@ -186,4 +178,4 @@ setInterval(() => {
       });
     }
   });
-}, 3600000); // Run every hour
+}, 3600000);

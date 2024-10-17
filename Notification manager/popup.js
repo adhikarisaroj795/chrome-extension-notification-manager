@@ -1,86 +1,56 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const notificationsContainer = document.getElementById(
-    "notifications-container"
-  );
-  const placeholder = document.getElementById("placeholder");
+  const notificationList = document.getElementById("notification-list");
+  const clearButton = document.getElementById("clear-notifications");
 
-  // Function to fetch notifications from storage
-  async function fetchNotifications() {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: "getNotifications" }, resolve);
-    });
-  }
+  // Load and display notifications
+  function loadNotifications() {
+    chrome.runtime.sendMessage(
+      { action: "getNotifications" },
+      (notifications) => {
+        notificationList.innerHTML = ""; // Clear the list
 
-  // Function to render notifications
-  async function renderNotifications(notifications) {
-    try {
-      // Clear existing notifications
-      notificationsContainer.innerHTML = "";
-
-      if (!notifications || notifications.length === 0) {
-        const noNotificationsDiv = document.createElement("div");
-        noNotificationsDiv.textContent = "No notifications yet.";
-        noNotificationsDiv.style.textAlign = "center";
-        noNotificationsDiv.style.padding = "20px";
-        notificationsContainer.appendChild(noNotificationsDiv);
-        return;
+        if (!notifications || notifications.length === 0) {
+          notificationList.innerHTML = "<li>No notifications found.</li>";
+        } else {
+          notifications.forEach((notification) => {
+            addNotificationToList(notification);
+          });
+        }
       }
-
-      // Use document fragment for better performance
-      const fragment = document.createDocumentFragment();
-
-      notifications.forEach((notification) => {
-        const notificationDiv = document.createElement("div");
-        notificationDiv.classList.add("notification");
-        notificationDiv.setAttribute("role", "listitem");
-
-        notificationDiv.innerHTML = `
-            <strong>${notification.message}</strong>
-            <div class="timestamp">${notification.timestamp}</div>
-            <div>
-              ${notification.source.title} - 
-              <a href="${notification.source.url}" target="_blank" rel="noopener noreferrer">
-                ${notification.source.url}
-              </a>
-            </div>
-          `;
-
-        fragment.appendChild(notificationDiv);
-      });
-
-      notificationsContainer.appendChild(fragment);
-
-      // Add event listeners for notification clicks
-      const notificationLinks = notificationsContainer.querySelectorAll("a");
-      notificationLinks.forEach((link) => {
-        link.addEventListener("click", (e) => {
-          e.preventDefault();
-          chrome.tabs.create({ url: link.href });
-        });
-      });
-    } catch (error) {
-      console.error("Error rendering notifications:", error);
-      const errorDiv = document.createElement("div");
-      errorDiv.textContent = "An error occurred while loading notifications.";
-      errorDiv.style.color = "red";
-      notificationsContainer.appendChild(errorDiv);
-    }
+    );
   }
 
-  // Initial render
-  fetchNotifications().then(renderNotifications);
+  // Add a notification to the list
+  function addNotificationToList(notification) {
+    const notificationElement = document.createElement("li");
+    notificationElement.className = "notification-item";
+    notificationElement.innerHTML = `
+      <strong>${notification.title}</strong><br>
+      ${notification.message}<br>
+      <a href="${notification.source.url}" target="_blank">Open</a>
+    `;
+    notificationList.prepend(notificationElement);
+  }
 
-  // Listen for real-time updates
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "newNotification") {
-      fetchNotifications().then(renderNotifications);
+  // Clear all notifications
+  clearButton.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "clearNotifications" }, (response) => {
+      if (response) {
+        notificationList.innerHTML = "<li>No notifications found.</li>";
+        alert("Notifications cleared successfully!");
+      } else {
+        alert("Failed to clear notifications.");
+      }
+    });
+  });
+
+  // Handle incoming new notifications
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === "newNotification") {
+      addNotificationToList(message.notification);
     }
   });
 
-  // Handle window resize for responsive layout
-  window.addEventListener("resize", () => {
-    const maxHeight = Math.min(window.innerHeight * 0.9, 600);
-    notificationsContainer.style.maxHeight = `${maxHeight}px`;
-    notificationsContainer.style.overflowY = "auto";
-  });
+  // Initial load of notifications
+  loadNotifications();
 });

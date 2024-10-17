@@ -3,38 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Notification Tracker</title>
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; style-src 'unsafe-inline';"
-    />
-    <style>
-      body {
-        width: 300px;
-        max-height: 600px;
-        font-family: Arial, sans-serif;
-        overflow-y: auto;
-      }
-      .notification {
-        border-bottom: 1px solid #ccc;
-        padding: 10px 0;
-      }
-      .timestamp {
-        font-size: 0.8em;
-        color: #888;
-      }
-      @media (max-width: 250px) {
-        body {
-          width: 100%;
-        }
-      }
-    </style>
+    <title>Professional Notification Manager</title>
+    <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <h3 id="title" aria-label="Notification Tracker">Notifications</h3>
-    <div id="notifications-container">
-      <p id="placeholder" style="display: none">Loading notifications...</p>
+    <div class="popup-container">
+      <h1>Notification Manager</h1>
+      <button id="clear-notifications">Clear Notifications</button>
+      <ul id="notification-list"></ul>
     </div>
+
     <script src="popup.js"></script>
   </body>
 </html>

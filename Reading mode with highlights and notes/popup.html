@@ -3,23 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Reading Mode</title>
+    <title>Enhanced Reading Mode</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <h1>Reading Mode</h1>
-    <button id="enable-mode">Enable Reading Mode</button>
-    <button id="disable-mode">Disable Reading Mode</button>
-
-    <h3>Total Time Spent Reading:</h3>
-    <p id="reading-time">Loading...</p>
-
-    <!-- Toggle for eye-friendly light mode -->
-    <div>
-      <label for="light-mode-toggle">Eye-friendly Mode</label>
-      <input type="checkbox" id="light-mode-toggle" />
+    <h1>Enhanced Reading Mode</h1>
+    <button id="enable-reading-mode">Enable Reading Mode</button>
+    <div id="highlight-color-picker">
+      <label for="highlight-color">Highlight Color:</label>
+      <input type="color" id="highlight-color" />
     </div>
-
+    <div id="font-size-controls">
+      <button id="increase-font">Increase Font</button>
+      <button id="decrease-font">Decrease Font</button>
+    </div>
+    <div id="notes-container">
+      <h2>Notes:</h2>
+      <ul id="notes-list"></ul>
+      <input type="text" id="note-input" placeholder="Add a note" />
+      <button id="add-note">Add Note</button>
+    </div>
+    <p id="reading-time">Reading Time: 0 minutes, 0 seconds</p>
     <script src="popup.js"></script>
   </body>
 </html>

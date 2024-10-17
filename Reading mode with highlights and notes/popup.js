@@ -1,104 +1,74 @@
-let readingStartTime;
+// Initialize popup elements
+document
+  .getElementById("highlight-color")
+  .addEventListener("input", (event) => {
+    chrome.storage.sync.set({ highlightColor: event.target.value });
+  });
 
-// When reading mode is enabled
-document.getElementById("enable-mode").addEventListener("click", () => {
+document.getElementById("increase-font").addEventListener("click", () => {
+  chrome.runtime.sendMessage({ action: "resizeFont", increase: true });
+});
+
+document.getElementById("decrease-font").addEventListener("click", () => {
+  chrome.runtime.sendMessage({ action: "resizeFont", increase: false });
+});
+
+document.getElementById("add-note").addEventListener("click", () => {
+  const noteInput = document.getElementById("note-input").value;
+  if (noteInput) {
+    addNote(noteInput);
+  }
+});
+
+// Enable Reading Mode functionality
+document.getElementById("enable-reading-mode").addEventListener("click", () => {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     chrome.scripting.executeScript({
       target: { tabId: tabs[0].id },
-      function: enableReadingMode,
+      function: () => {
+        chrome.runtime.sendMessage({ action: "enableReadingMode" });
+      },
     });
-  });
-
-  // Record the start time
-  readingStartTime = Date.now();
-  chrome.storage.sync.set({ readingStartTime });
-});
-
-// When reading mode is disabled
-document.getElementById("disable-mode").addEventListener("click", () => {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.scripting.executeScript({
-      target: { tabId: tabs[0].id },
-      function: disableReadingMode,
-    });
-  });
-
-  // Calculate total time spent
-  chrome.storage.sync.get(["readingStartTime", "totalReadingTime"], (data) => {
-    const endTime = Date.now();
-    const elapsed = endTime - data.readingStartTime;
-    const totalTime = (data.totalReadingTime || 0) + elapsed;
-    chrome.storage.sync.set({
-      totalReadingTime: totalTime,
-      readingStartTime: null,
-    });
-
-    // Display updated time
-    updateReadingTimeDisplay();
   });
 });
 
-// Display the reading time in the popup
-function updateReadingTimeDisplay() {
-  chrome.storage.sync.get("totalReadingTime", (data) => {
-    const totalTime = data.totalReadingTime || 0;
-    const minutes = Math.floor(totalTime / 60000);
-    const seconds = Math.floor((totalTime % 60000) / 1000);
+function addNote(note) {
+  chrome.storage.sync.get("notes", (data) => {
+    const notes = data.notes || {};
+    const noteId = new Date().getTime(); // Use timestamp as note ID
+    notes[noteId] = note;
+    chrome.storage.sync.set({ notes }, () => {
+      renderNotes();
+      document.getElementById("note-input").value = ""; // Clear input
+    });
+  });
+}
 
+function renderNotes() {
+  chrome.storage.sync.get("notes", (data) => {
+    const notesList = document.getElementById("notes-list");
+    notesList.innerHTML = ""; // Clear existing notes
+    const notes = data.notes || {};
+    for (const [id, note] of Object.entries(notes)) {
+      const li = document.createElement("li");
+      li.textContent = note;
+      notesList.appendChild(li);
+    }
+  });
+}
+
+// Update reading time on load
+updateReadingTime();
+function updateReadingTime() {
+  chrome.storage.sync.get("readingTime", (data) => {
+    const time = data.readingTime || 0;
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
     document.getElementById(
       "reading-time"
-    ).textContent = `${minutes} minutes and ${seconds} seconds`;
+    ).textContent = `Reading Time: ${minutes} minutes, ${seconds} seconds`;
   });
 }
 
-// Initialize the reading time display when the popup is opened
-document.addEventListener("DOMContentLoaded", () => {
-  updateReadingTimeDisplay();
-  initializeLightModeToggle();
-});
-
-// Function to enable reading mode
-function enableReadingMode() {
-  document.body.classList.add("reading-mode");
-}
-
-// Function to disable reading mode
-function disableReadingMode() {
-  document.body.classList.remove("reading-mode");
-}
-
-// Function to initialize light mode toggle
-function initializeLightModeToggle() {
-  chrome.storage.sync.get("eyeFriendlyMode", (data) => {
-    const isEnabled = data.eyeFriendlyMode || false;
-    document.getElementById("light-mode-toggle").checked = isEnabled;
-    applyLightMode(isEnabled);
-  });
-
-  document
-    .getElementById("light-mode-toggle")
-    .addEventListener("change", (event) => {
-      const isChecked = event.target.checked;
-      chrome.storage.sync.set({ eyeFriendlyMode: isChecked });
-      applyLightMode(isChecked);
-    });
-}
-
-// Apply or remove light mode
-function applyLightMode(isEnabled) {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.scripting.executeScript({
-      target: { tabId: tabs[0].id },
-      function: (enabled) => {
-        if (enabled) {
-          document.body.style.backgroundColor = "#f5f5dc"; // Softer background for eye comfort
-          document.body.style.color = "#333"; // Softer text color
-        } else {
-          document.body.style.backgroundColor = ""; // Revert to normal
-          document.body.style.color = "";
-        }
-      },
-      args: [isEnabled],
-    });
-  });
-}
+// Initial render of notes
+renderNotes();

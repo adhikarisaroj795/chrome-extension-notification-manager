@@ -1,17 +1,29 @@
 body {
+  width: 300px;
   font-family: Arial, sans-serif;
-  padding: 10px;
 }
 
 h1 {
-  font-size: 24px;
+  font-size: 18px;
+  text-align: center;
 }
 
 button {
-  display: block;
+  margin: 5px;
+  padding: 10px;
+  width: calc(100% - 20px);
+}
+
+#highlight-color-picker {
+  text-align: center;
   margin: 10px 0;
 }
 
-#light-mode-toggle {
+#notes-container {
   margin-top: 10px;
+}
+
+#note-input {
+  width: calc(100% - 20px);
+  margin: 5px 0;
 }

@@ -30,12 +30,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 function startReadingMode() {
   document.body.style.backgroundColor = "#f5f5f5"; // Light background for reading
   document.body.style.color = "#333"; // Dark text for contrast
-  const range = document.createRange();
-  range.selectNodeContents(document.body);
-  const selection = window.getSelection();
-  selection.removeAllRanges();
-  selection.addRange(range);
-
+  document.body.style.fontSize = "16px"; // Default font size
   startReadingTime(); // Start tracking reading time
 }
 
@@ -47,6 +42,7 @@ function highlightText() {
     const span = document.createElement("span");
     chrome.storage.sync.get("highlightColor", (data) => {
       span.style.backgroundColor = data.highlightColor || "yellow";
+      span.classList.add("highlight"); // Add class for styling
       range.surroundContents(span);
     });
   }
